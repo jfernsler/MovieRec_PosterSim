@@ -8,6 +8,22 @@ M1_DATASET = 'ml-1m'
 DATA_DIR = os.path.join(PROJ_PATH, 'data', M1_DATASET)
 
 # Dataset related constants
+AGE_DICT = {1:"Under 18",
+            18:"18-24",
+            25:"25-34",
+            35:"35-44",
+            45:"45-49",
+            50:"50-55",
+            56:"56+"}
+
+AGE_MAP = {1:0,
+            18:1,
+            25:2,
+            35:3,
+            45:4,
+            50:5,
+            56:6}
+
 OCCUPATION_DICT = {0:"other",
                     1:"academic/educator",
                     2:"artist",
