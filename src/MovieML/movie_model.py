@@ -49,7 +49,7 @@ class RecommenderNet(nn.Module):
 def main():
     # Train the model
     movie_data = MovieDataset()
-    num_movies = 5
+    num_movies = 1000
     movie_loader = torch.utils.data.DataLoader(movie_data,
                                                 batch_size=num_movies,
                                                 shuffle=True,
@@ -106,36 +106,16 @@ def main():
             genres_batch = d['genre'].to(device)
             # Y
             ratings_batch =  d['rating'].to(device)
-
-            # print(f'User IDs : {user_ids_batch}')
-            # print(f'Genders : {genders_batch}')
-            # print(f'Ages : {ages_batch}')
-            # print(f'Occupations : {occupations_batch}')
-            # print(f'Movie IDs : {movie_ids_batch}')
-            # print(f'Genres : {genres_batch}')
-            # print(f'Ratings : {ratings_batch}')
             
             optimizer.zero_grad()
             outputs = model(user_ids_batch, genders_batch, ages_batch, occupations_batch, 
-                                movie_ids_batch, genres_batch)
-            # try:
-            #     outputs = model(user_ids_batch, genders_batch, ages_batch, occupations_batch, 
-            #                     movie_ids_batch, genres_batch)
-            # except:
-            #     print(f'User IDs : {user_ids_batch}')
-            #     print(f'Gender : {genders_batch}')
-            #     print(f'Age : {ages_batch}')
-            #     print(f'Occupation : {occupations_batch}')
-            #     print(f'Movie IDs : {movie_ids_batch}')
-            #     print(f'Genres : {genres_batch}')
-            #print(f'Outputs : {outputs}')
+                             movie_ids_batch, genres_batch)
             loss = criterion(outputs, ratings_batch).to(device)
-            #print(f'Loss : {loss}')
             loss.backward()
             optimizer.step()
             running_loss += loss.item()
 
-        epoch_loss = running_loss / len(num_movies)
+        epoch_loss = running_loss / float(num_movies)
 
         print('Epoch {}/{} Loss: {:.4f}'.format(epoch+1, num_epochs, epoch_loss))
 
