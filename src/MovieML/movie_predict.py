@@ -83,13 +83,23 @@ def matrix_all():
         # Predict
         yhat = model(user_ids_batch, genders_batch, ages_batch, occupations_batch, 
                             movie_ids_batch, genres_batch)
+        
+        yhat = torch.clamp(yhat, 0.0, 1.0)
 
-        y_list.extend(y)
-        yhat_list.extend(yhat)
+        # back to star ratings
+        y = y * 5.0
+        yhat = torch.ceil(yhat * 5.0)
+
+        # add to list
+        y_list.extend(y.tolist())
+        yhat_list.extend(yhat.tolist())
+
+        # if n == 0:
+        #     break
     
     values = ['1', '2', '3', '4', '5']
     chart_path = os.path.join(CHART_DIR, 'movie_rating_confusion_matrix_all_data.png')
-    make_matrix(y_list, yhat_list, values, 'Movie Rating Confusion Matrix All Data', chart_path)
+    make_matrix(y_list, yhat_list, values, 'Movie Rating Confusion Matrix - All Data', chart_path)
 
 def predict_user(user_id):
     # evaluate the model
@@ -124,6 +134,7 @@ def predict_user(user_id):
 
 def make_matrix(y_true, y_pred, matrix_values, figure_title, figure_path):
     # Build confusion matrix
+    print(f'Confusion Matrix: {figure_title}')
     cf_matrix = confusion_matrix(y_true, y_pred)
     df_cm = pd.DataFrame(cf_matrix / np.sum(cf_matrix, axis=1)[:, None],
                             index = [matrix_values],
@@ -134,6 +145,7 @@ def make_matrix(y_true, y_pred, matrix_values, figure_title, figure_path):
     hm = sn.heatmap(df_cm, annot=True, linewidths=.5, cmap='plasma', fmt='.2f', linecolor='grey')
     hm.set(xlabel='Predicted', ylabel='Truth')
     plt.savefig(figure_path, dpi=300, bbox_inches="tight")
+    print(f'Saved: {figure_path}')
 
 if __name__ == '__main__':
     matrix_all()
