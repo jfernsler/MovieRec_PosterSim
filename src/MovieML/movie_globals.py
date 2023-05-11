@@ -7,6 +7,11 @@ PROJ_PATH = os.path.join(MOD_DUR, '..', '..')
 M1_DATASET = 'ml-1m'
 DATA_DIR = os.path.join(PROJ_PATH, 'data', M1_DATASET)
 
+DATA_OUT_DIR = os.path.join(PROJ_PATH, 'data_out')
+# CSV_DIR = os.path.join(SCRIPT_DIR, '..', 'csv')
+CHART_DIR = os.path.join(PROJ_PATH, 'charts')
+MODEL_DIR = os.path.join(PROJ_PATH, 'models')
+
 # Dataset related constants
 AGE_DICT = {1:"Under 18",
             18:"18-24",

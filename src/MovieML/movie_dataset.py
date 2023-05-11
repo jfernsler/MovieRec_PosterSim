@@ -52,12 +52,12 @@ class MovieDataset(Dataset):
         self.movielinks = pd.read_csv(movieslinks_csv, engine='python', encoding='latin-1')
         #self.movielinks.set_index('movieID', inplace=True)
 
-        self.num_users = 6040 + 1 #self.max_userid
-        self.num_genders = 2 # self.users['gender'].nunique()
-        self.num_ages = 7 + 1 # self.users['age'].nunique()
-        self.num_occupations = 21 + 1 # self.users['occupation'].nunique()
+        self.num_users = self.max_userid + 1 # 6040 + 1
+        self.num_genders = self.users['gender'].nunique() # 2
+        self.num_ages = self.users['age'].nunique() + 1 # 7 + 1
+        self.num_occupations = self.users['occupation'].nunique() + 1 # 21 + 1
 
-        self.num_movies = 3992 + 1 # self.max_movieid
+        self.num_movies = self.max_movieid + 1 # 3992 + 1
         self.num_genres = self.movies['genres'].nunique() + 1
 
 
