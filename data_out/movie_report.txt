@@ -1,0 +1,151 @@
+MovieRecommender(
+  (user_embedding): Embedding(6041, 50)
+  (gender_embedding): Embedding(2, 50)
+  (age_embedding): Embedding(8, 50)
+  (occupation_embedding): Embedding(22, 50)
+  (movie_embedding): Embedding(3953, 50)
+  (genre_embedding): Embedding(302, 50)
+  (fc1): Linear(in_features=300, out_features=10, bias=True)
+  (fc2): Linear(in_features=10, out_features=10, bias=True)
+  (fc3): Linear(in_features=10, out_features=1, bias=True)
+  (dropout): Dropout(p=0.2, inplace=False)
+)******************************
+Epoch 1/15
+Training loss: 0.0683
+Validation loss: 0.0115
+******************************
+
+******************************
+Epoch 2/15
+Training loss: 0.0431
+Validation loss: 0.0097
+Training loss difference: -0.0252
+Validation loss difference: -0.0018
+******************************
+
+Saved model to d:\cs614\reco_similar_posters\src\MovieML\..\..\models\movie_model.pth
+
+******************************
+Epoch 3/15
+Training loss: 0.0383
+Validation loss: 0.0095
+Training loss difference: -0.0048
+Validation loss difference: -0.0002
+******************************
+
+Saved model to d:\cs614\reco_similar_posters\src\MovieML\..\..\models\movie_model.pth
+
+******************************
+Epoch 4/15
+Training loss: 0.0376
+Validation loss: 0.0094
+Training loss difference: -0.0007
+Validation loss difference: -0.0000
+******************************
+
+Saved model to d:\cs614\reco_similar_posters\src\MovieML\..\..\models\movie_model.pth
+
+******************************
+Epoch 5/15
+Training loss: 0.0374
+Validation loss: 0.0093
+Training loss difference: -0.0002
+Validation loss difference: -0.0001
+******************************
+
+Saved model to d:\cs614\reco_similar_posters\src\MovieML\..\..\models\movie_model.pth
+
+******************************
+Epoch 6/15
+Training loss: 0.0373
+Validation loss: 0.0093
+Training loss difference: -0.0001
+Validation loss difference: 0.0000
+******************************
+
+******************************
+Epoch 7/15
+Training loss: 0.0372
+Validation loss: 0.0093
+Training loss difference: -0.0001
+Validation loss difference: -0.0000
+******************************
+
+Saved model to d:\cs614\reco_similar_posters\src\MovieML\..\..\models\movie_model.pth
+
+******************************
+Epoch 8/15
+Training loss: 0.0371
+Validation loss: 0.0093
+Training loss difference: -0.0001
+Validation loss difference: -0.0000
+******************************
+
+Saved model to d:\cs614\reco_similar_posters\src\MovieML\..\..\models\movie_model.pth
+
+******************************
+Epoch 9/15
+Training loss: 0.0371
+Validation loss: 0.0094
+Training loss difference: -0.0001
+Validation loss difference: 0.0001
+******************************
+
+******************************
+Epoch 10/15
+Training loss: 0.0370
+Validation loss: 0.0093
+Training loss difference: -0.0001
+Validation loss difference: -0.0001
+******************************
+
+Saved model to d:\cs614\reco_similar_posters\src\MovieML\..\..\models\movie_model.pth
+
+******************************
+Epoch 11/15
+Training loss: 0.0370
+Validation loss: 0.0093
+Training loss difference: -0.0000
+Validation loss difference: -0.0000
+******************************
+
+Saved model to d:\cs614\reco_similar_posters\src\MovieML\..\..\models\movie_model.pth
+
+******************************
+Epoch 12/15
+Training loss: 0.0369
+Validation loss: 0.0093
+Training loss difference: -0.0001
+Validation loss difference: -0.0000
+******************************
+
+Saved model to d:\cs614\reco_similar_posters\src\MovieML\..\..\models\movie_model.pth
+
+******************************
+Epoch 13/15
+Training loss: 0.0369
+Validation loss: 0.0093
+Training loss difference: -0.0000
+Validation loss difference: -0.0000
+******************************
+
+Saved model to d:\cs614\reco_similar_posters\src\MovieML\..\..\models\movie_model.pth
+
+******************************
+Epoch 14/15
+Training loss: 0.0368
+Validation loss: 0.0093
+Training loss difference: -0.0000
+Validation loss difference: -0.0000
+******************************
+
+Saved model to d:\cs614\reco_similar_posters\src\MovieML\..\..\models\movie_model.pth
+
+******************************
+Epoch 15/15
+Training loss: 0.0368
+Validation loss: 0.0093
+Training loss difference: -0.0000
+Validation loss difference: 0.0000
+******************************
+

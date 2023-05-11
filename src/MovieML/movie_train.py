@@ -13,7 +13,7 @@ from movie_utils import make_epoch_chart
 
 
 
-def main(epoch_count=5, batch_size=1000, validation_ratio=0.2, 
+def main(epoch_count=15, batch_size=1000, validation_ratio=0.2, 
          embedding_count=50, hidden_count=10, eta=0.001):
     # Train the model
     movie_data = MovieDataset()
@@ -157,28 +157,27 @@ def main(epoch_count=5, batch_size=1000, validation_ratio=0.2,
         save_report = ''
         # if validation loss decreases, save model
         if epoch > 0 and epoch_valid_losses[-2] > epoch_valid_losses[-1]:
-            model_path = os.path.join(MODEL_DIR, 'movie_model.pth')
-            torch.save(model.state_dict(), model_path)
-            save_report += f'Saved model to {model_path}'
+            torch.save(model.state_dict(), MODEL_STATE)
+            save_report += f'Saved model to {MODEL_STATE}\n\n'
             print(save_report)
         report += save_report
 
         stop_report = ''
         # if validation loss increases 4 times in a row, stop training
         if epoch > 5 and epoch_valid_losses[-4] < epoch_valid_losses[-3] < epoch_valid_losses[-2] < epoch_valid_losses[-1]:
-            stop_report = 'Stopping training...'
-            stop_report += f'Best model at epoch {epoch-3}'
-            stop_report += f'Best validation loss: {epoch_valid_losses[epoch-3]}'
-            stop_report += f'Best training loss: {epoch_train_losses[epoch-3]}'
-            stop_report += f'Last validation loss: {epoch_valid_losses[epoch]}'
-            stop_report += f'Last training loss: {epoch_train_losses[epoch]}'
+            stop_report = 'Stopping training...\n'
+            stop_report += f'Best model at epoch {epoch-3}\n'
+            stop_report += f'Best validation loss: {epoch_valid_losses[epoch-3]}\n'
+            stop_report += f'Best training loss: {epoch_train_losses[epoch-3]}\n'
+            stop_report += f'Last validation loss: {epoch_valid_losses[epoch]}\n'
+            stop_report += f'Last training loss: {epoch_train_losses[epoch]}\n\n'
             report += stop_report
             print(stop_report)
         report += stop_report
 
         
         # write out report and stop training if there is a stop report
-        if stop_report != '':
+        if stop_report != '' or epoch == num_epochs-1:
             # write report to file in DATA_OUT_DIR
             with open(os.path.join(DATA_OUT_DIR, 'movie_report.txt'), 'w') as f:
                 f.write(report)

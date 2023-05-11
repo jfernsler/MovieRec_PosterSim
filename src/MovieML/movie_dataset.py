@@ -97,10 +97,21 @@ class MovieDataset(Dataset):
                 'gender': int(gender),
                 'age': int(age),
                 'occupation': int(occupation),
-                #'movie': movie, 
+                'movie': movie, 
                 'genre': int(genre),
-                #'link': torch.tensor(movie_link), 
+                #'link': int(movie_link), 
                 'rating': float(rating)}
+
+    def get_user_unrated_movies(self, idx):
+        user_id = self.ratings.iloc[idx]['userID']
+        user_ratings = self.ratings.loc[self.ratings['userID']==user_id]['movieID']
+        all_movies = self.movies['movieID']
+        unwatched_movies = all_movies[~all_movies.isin(user_ratings)]
+        return unwatched_movies
+    
+    def get_user_rating_indicies(self, user_id):
+        return self.ratings.loc[self.ratings['userID']==user_id].index.values
+    
 
 
 if __name__ == '__main__':

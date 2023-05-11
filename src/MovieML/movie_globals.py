@@ -11,6 +11,7 @@ DATA_OUT_DIR = os.path.join(PROJ_PATH, 'data_out')
 # CSV_DIR = os.path.join(SCRIPT_DIR, '..', 'csv')
 CHART_DIR = os.path.join(PROJ_PATH, 'charts')
 MODEL_DIR = os.path.join(PROJ_PATH, 'models')
+MODEL_STATE = os.path.join(MODEL_DIR, 'movie_model.pth')
 
 # Dataset related constants
 AGE_DICT = {1:"Under 18",
