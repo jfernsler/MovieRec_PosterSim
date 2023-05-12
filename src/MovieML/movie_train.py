@@ -13,8 +13,8 @@ from movie_utils import make_epoch_chart
 
 
 
-def main(epoch_count=15, batch_size=1000, validation_ratio=0.2, 
-         embedding_count=50, hidden_count=10, eta=0.001):
+def main(epoch_count=30, batch_size=1000, validation_ratio=0.2, 
+         embedding_count=50, hidden_count=10, eta=0.0001):
     # Train the model
     movie_data = MovieDataset()
 
@@ -33,12 +33,12 @@ def main(epoch_count=15, batch_size=1000, validation_ratio=0.2,
     movie_train_loader = torch.utils.data.DataLoader(train_data,
                                                 batch_size=num_movies,
                                                 shuffle=True,
-                                                num_workers=4)
+                                                num_workers=8)
 
     movie_valid_loader = torch.utils.data.DataLoader(valid_data,
                                                 batch_size=num_movies,
                                                 shuffle=True,
-                                                num_workers=4)
+                                                num_workers=8)
 
     # define counts for embedding layers
     num_users = movie_data.num_users

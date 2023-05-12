@@ -38,6 +38,7 @@ class MovieDataset(Dataset):
         self.movies = pd.read_csv(movies_csv, sep='::', engine='python', encoding='latin-1', header=None, names=movies_headings)
         #self.movies.set_index('movieID', inplace=True)
         # encode genres with all unique possibilites
+        self.movies['genres_orig'] = self.movies['genres']
         self.movies['genres'] = pd.factorize(self.movies['genres'])[0]
         #self.movies['genres']= self.movies['genres'].str.split('|', expand = False)
         #mlb = MultiLabelBinarizer(sparse_output=True)
@@ -111,6 +112,28 @@ class MovieDataset(Dataset):
     
     def get_user_rating_indicies(self, user_id):
         return self.ratings.loc[self.ratings['userID']==user_id].index.values
+    
+    def get_user(self, user_id):
+        gender = self.users.loc[user_id]['gender']
+        age = self.users.loc[user_id]['age']
+        occupation = self.users.loc[user_id]['occupation']
+        return {'user_id': int(user_id),
+                'gender' : int(gender),
+                'age' : int(age),
+                'occupation' : int(occupation)}
+    
+    def get_movie(self, movie_id):
+        movie_loc = self.movies.loc[self.movies['movieID']==movie_id].index.values[0]
+        title = self.movies.loc[movie_loc]['title']
+        genre = self.movies.loc[movie_loc]['genres']
+        genres_orig = self.movies.loc[movie_loc]['genres_orig']
+        #movie_link = self.movielinks.loc[movie_id]['imdbId']
+        return {'movie_id': int(movie_loc),
+                'title': title,
+                'genre': int(genre),
+                'genres_orig': genres_orig
+                #'link': int(movie_link)
+                }
     
 
 

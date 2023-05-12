@@ -4,6 +4,7 @@ from sklearn.metrics import confusion_matrix
 import seaborn as sn
 import pandas as pd
 import numpy as np
+import random
 import matplotlib.pyplot as plt
 from movie_dataset import MovieDataset
 from movie_model import MovieRecommender
@@ -51,6 +52,21 @@ def predict_single(model, movie_data, n, device):
                     movie_ids_batch, genres_batch)
     
     return y, yhat
+
+def predict_user_movie(model, user, movie, device):
+    # user X
+    user_ids_batch = torch.tensor(user['user_id']).to(device)
+    genders_batch = torch.tensor(user['gender']).to(device)
+    ages_batch = torch.tensor(user['age']).to(device)
+    occupations_batch = torch.tensor(user['occupation']).to(device)
+    # movie X
+    movie_ids_batch = torch.tensor(movie['movie_id']).to(device)
+    genres_batch = torch.tensor(movie['genre']).to(device)
+    # forward pass
+    yhat = model(user_ids_batch, genders_batch, ages_batch, occupations_batch, 
+                    movie_ids_batch, genres_batch)
+    
+    return yhat
 
 def matrix_all():
     # evaluate the model
@@ -131,7 +147,6 @@ def predict_user(user_id):
         print(f'Item: {p} -> Predicted: {round(yhat)} Actual: {int(y)}')
     print('*'*30)
 
-
 def make_matrix(y_true, y_pred, matrix_values, figure_title, figure_path):
     # Build confusion matrix
     print(f'Confusion Matrix: {figure_title}')
@@ -147,5 +162,73 @@ def make_matrix(y_true, y_pred, matrix_values, figure_title, figure_path):
     plt.savefig(figure_path, dpi=300, bbox_inches="tight")
     print(f'Saved: {figure_path}')
 
+def plot_ratings():
+    movie_data = MovieDataset()
+    ratings = movie_data.ratings
+    rate_counts = ratings['rating'].value_counts(sort=True) * 5.0
+    plt.figure(figsize = (16,12))
+    plt.subplots_adjust(bottom=0.25)
+    plt.title('Rating Counts')
+    hm = sn.barplot(x=rate_counts.index, y=rate_counts.values, palette='plasma')
+    hm.set(xlabel='Rating', ylabel='Count')
+    plt.savefig(os.path.join(CHART_DIR, 'movie_ratings.png'), dpi=300, bbox_inches="tight")
+
+def rate_unrated_movies(user_id):
+    movie_data = MovieDataset()
+    user_ratings = movie_data.get_user_rating_indicies(user_id)
+    unrated = movie_data.get_user_unrated_movies(user_id)
+    print(f'User {user_id} has rated {len(user_ratings)} movies and has {len(unrated)} unrated movies')
+    print(f'Predicting ratings for {len(unrated)} movies')
+
+    device = torch.device('cpu')
+
+    model = get_model(movie_data)
+    model.load_state_dict(torch.load(MODEL_STATE))
+    model.eval()
+
+    user = movie_data.get_user(user_id)
+    
+    movie_ratings = dict()
+
+    for m in unrated:
+        movie = movie_data.get_movie(m)
+        rating = predict_user_movie(model, user, movie, device)
+        movie_ratings[m] = {'rating':float(rating * 5.0), 'movie': movie}
+
+    # sort by rating
+    sorted_ratings = sorted(movie_ratings.items(), key=lambda x: x[1]['rating'], reverse=True)
+
+    # print top 3 movies for user
+    rated = movie_data.get_user_rating_indicies(user_id)
+    rated_movies = dict()
+    for r in rated:
+        rating = movie_data.ratings.loc[r]
+        rated_movies[r] = {'rating':rating['rating'], 'movie': movie_data.get_movie(rating['movieID'])}
+    # sort rated movies by rating
+    rated = sorted(rated_movies.items(), key=lambda x: x[1]['rating'], reverse=True)
+
+    print()
+    print('*'*30)
+    print(f'Top 3 rated movies for user {user_id}')
+    for i in range(3):
+        m = rated[i]
+        print(f"{i+1}) {m[1]['rating']*5.0:.1f} :: {m[1]['movie']['title'], m[1]['movie']['genres_orig']}")
+    print('*'*30)
+    print()
+    
+    # print top 10
+    print('*'*30)
+    print(f'Top 10 movies for user {user_id}')
+    for i in range(10):
+        m = sorted_ratings[i]
+        print(f"{i+1}) {m[1]['rating']:.4f} :: {m[1]['movie']['title'], m[1]['movie']['genres_orig']}")
+    print('*'*30)
+
+
+
 if __name__ == '__main__':
-    matrix_all()
+    #matrix_all()
+    #plot_ratings()
+    # random number between 1 and 6040
+    user_id = random.randint(1, 6040)
+    rate_unrated_movies(user_id)
