@@ -28,30 +28,24 @@ class MovieDataset(Dataset):
         self.users['age'] = self.users['age'].map(AGE_MAP)
 
         # load ratings
-        #self.ratings = pd.read_csv(ratings_csv, sep='::', engine='python', encoding='latin-1', header=None, names=ratings_headings)
         self.ratings = pd.read_csv(ratings_csv, engine='python', encoding='latin-1')
-
         # normalize ratings
         self.ratings['rating'] = self.ratings['rating'].div(5.0)
 
         # load movies
         self.movies = pd.read_csv(movies_csv, sep='::', engine='python', encoding='latin-1', header=None, names=movies_headings)
-
         # encode genres with all unique possibilites
         self.movies['genres_orig'] = self.movies['genres']
         self.movies['genres'] = pd.factorize(self.movies['genres'])[0]
-        #self.movies['genres']= self.movies['genres'].str.split('|', expand = False)
-        #mlb = MultiLabelBinarizer(sparse_output=True)
-        # self.movies = self.movies.join(pd.DataFrame.sparse.from_spmatrix(
-        #                 mlb.fit_transform(self.movies.pop('genres')),
-        #                 index=self.movies.index,
-        #                 columns=mlb.classes_))
+
+        # load movie links - maybe use only this...
+        self.movielinks = pd.read_csv(movieslinks_csv, engine='python', encoding='latin-1')
+        # encode genres with all unique possibilites
+        self.movielinks['genres_orig'] = self.movielinks['genres']
+        self.movielinks['genres'] = pd.factorize(self.movielinks['genres'])[0]
 
         self.max_userid = self.ratings['userID'].drop_duplicates().max()
         self.max_movieid = self.ratings['movieID'].drop_duplicates().max()
-
-        # load movie links
-        self.movielinks = pd.read_csv(movieslinks_csv, engine='python', encoding='latin-1')
 
         self.num_users = self.max_userid + 1 # 6040 + 1
         self.num_genders = self.users['gender'].nunique() # 2
@@ -68,8 +62,8 @@ class MovieDataset(Dataset):
     def __getitem__(self, idx):
         rating = self.ratings.iloc[idx]
         user_id = rating['userID']
-        #movie_id = rating['movieID']
-        movie_id = rating['rowID']
+        movie_id = rating['movieID']
+        #movie_id = rating['rowID']
 
         # get the rating
         rating = rating['rating']
@@ -78,20 +72,15 @@ class MovieDataset(Dataset):
         gender = self.users.loc[user_id]['gender']
         age = self.users.loc[user_id]['age']
         occupation = self.users.loc[user_id]['occupation']
-        # get movie genre
-        #movie = torch.from_numpy(self.movies.loc[movie_id]['genres'].to_numpy().astype(np.float32))
-        # mov_idx = self.movies.loc[self.movies['movieID']==movie_id].index
-        # movie_df = self.movies.loc[mov_idx]
 
-        # movie = movie_df['title']
-        # genre = movie_df['genres'].to_numpy()
-        movie = self.movies.loc[movie_id]['title']
-        genre = self.movies.loc[movie_id]['genres']
+        # get movie title, genre, and link
+        # movie = self.movies.loc[movie_id]['title']
+        # genre = self.movies.loc[movie_id]['genres']
+        movie_loc = self.movies.loc[self.movies['movieID']==movie_id].index.values[0]
+        movie = self.movielinks.loc[movie_loc]['title']
+        genre = self.movielinks.loc[movie_loc]['genres']
 
-        # get link to movie - index and movieID do not match
-        # link_idx = self.movielinks.loc[self.movielinks['movieID']==movie_id].index
-        # movie_link = self.movielinks.loc[link_idx]['imdbId'].to_numpy()
-        movie_link = self.movielinks.loc[movie_id]['imdbId']
+        movie_link = self.movielinks.loc[movie_loc]['imdbId']
         if pd.isna(movie_link):
             movie_link = 0
 
@@ -125,15 +114,16 @@ class MovieDataset(Dataset):
                 'occupation' : int(occupation)}
     
     def get_movie(self, movie_id):
-        movie_loc = self.movies.loc[self.movies['movieID']==movie_id].index.values[0]
-        title = self.movies.loc[movie_loc]['title']
-        genre = self.movies.loc[movie_loc]['genres']
-        genres_orig = self.movies.loc[movie_loc]['genres_orig']
+        movie_loc = self.movielinks.loc[self.movielinks['movieID']==movie_id].index.values[0]
+
+        title = self.movielinks.loc[movie_loc]['title']
+        genre = self.movielinks.loc[movie_loc]['genres']
+        genres_orig = self.movielinks.loc[movie_loc]['genres_orig']
         movie_link = self.movielinks.loc[movie_loc]['imdbId']
         if pd.isna(movie_link):
             movie_link = 0
 
-        return {'movie_id': int(movie_loc),
+        return {'movie_id': int(movie_id),
                 'title': title,
                 'genre': int(genre),
                 'genres_orig': genres_orig,

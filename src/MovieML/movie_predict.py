@@ -6,9 +6,12 @@ import pandas as pd
 import numpy as np
 import random
 import matplotlib.pyplot as plt
+
 from movie_dataset import MovieDataset
 from movie_model import MovieRecommender
 from movie_globals import *
+from movie_utils import get_image_listing, get_poster_url
+from movie_poster_sim import *
 
 def get_model(movie_data):
     # define counts for embedding layers
@@ -35,6 +38,10 @@ def get_model(movie_data):
     return model
 
 def predict_single(model, movie_data, n, device):
+    """
+    Predict a users ratings for a previously rated movie movie, and 
+    return the actual rating and the predicted rating
+    """
      # get rating data piece
     d = movie_data[n]
     #print(d)
@@ -54,6 +61,9 @@ def predict_single(model, movie_data, n, device):
     return y, yhat
 
 def predict_user_movie(model, user, movie, device):
+    """
+    Predict a user's rating for a movie and return the predicted rating
+    """
     # user X
     user_ids_batch = torch.tensor(user['user_id']).to(device)
     genders_batch = torch.tensor(user['gender']).to(device)
@@ -175,13 +185,31 @@ def plot_ratings():
 
 def rate_unrated_movies(user_id):
     movie_data = MovieDataset()
+
+    user_id = 5360
+
     user_ratings = movie_data.get_user_rating_indicies(user_id)
-    unrated = movie_data.get_user_unrated_movies(user_id)
-    print(f'User {user_id} has rated {len(user_ratings)} movies and has {len(unrated)} unrated movies')
-    print(f'Predicting ratings for {len(unrated)} movies')
+    user_unrated = movie_data.get_user_unrated_movies(user_id)
+    print('#'*80)
+    print(f'User {user_id} has rated {len(user_ratings)} movies and has {len(user_unrated)} unrated movies')
 
+    ###########################################################
+    # get rated movies for user
+    rated = movie_data.get_user_rating_indicies(user_id)
+    rated_movies = dict()
+    for r in rated:
+        rating = movie_data.ratings.loc[r]
+        movie = movie_data.get_movie(rating['movieID'])
+        movie['rating' ] = rating['rating'] * 5.0
+        rated_movies[r] = movie
+    # sort rated movies by rating
+    sorted_orig_ratings = sorted(rated_movies.items(), key=lambda x: x[1]['rating'], reverse=True)
+    ###########################################################
+
+    print(f'Predicting ratings for {len(user_unrated)} movies')
+
+    ###########################################################
     device = torch.device('cpu')
-
     model = get_model(movie_data)
     model.load_state_dict(torch.load(MODEL_STATE))
     model.eval()
@@ -189,34 +217,82 @@ def rate_unrated_movies(user_id):
     user = movie_data.get_user(user_id)
     
     movie_ratings = dict()
-
-    for m in unrated:
+    # predict ratings for unrated movies
+    for m in user_unrated:
         movie = movie_data.get_movie(m)
         rating = predict_user_movie(model, user, movie, device)
-        movie_ratings[m] = {'rating':float(rating * 5.0), 'movie': movie}
-
+        movie['rating'] = float(rating * 5.0)
+        movie['apparent_id'] = m
+        movie_ratings[m] = movie
     # sort by rating
-    sorted_ratings = sorted(movie_ratings.items(), key=lambda x: x[1]['rating'], reverse=True)
+    sorted_new_ratings = sorted(movie_ratings.items(), key=lambda x: x[1]['rating'], reverse=True)
+    ###########################################################
 
-    # print top 3 movies for user
-    rated = movie_data.get_user_rating_indicies(user_id)
-    rated_movies = dict()
-    for r in rated:
-        rating = movie_data.ratings.loc[r]
-        rated_movies[r] = {'rating':rating['rating'], 'movie': movie_data.get_movie(rating['movieID'])}
-    # sort rated movies by rating
-    rated = sorted(rated_movies.items(), key=lambda x: x[1]['rating'], reverse=True)
+    rated_posters = list()
+    for r in sorted_orig_ratings[:3]:
+        print(f'{r[1]["rating"]:.1f} :: {r[1]["title"]}')
+        if r[1]['link'] != 0:
+            print('fetching image...')
+            rated_posters.append(get_poster_url(r[1]['link']))
+
+    print(rated_posters)
+    cluster_center = get_cluster_center(rated_posters)
+
+    print()
+
+    n = 0
+    unrated_posters = list()
+    unrated_top = dict()
+    for m in sorted_new_ratings:
+        rating = m[1]['rating']
+        # This is an admitted bodge where some movie are getting >5.0 ratings and dominating the lists
+        if rating <= 5.0:
+            title = m[1]['title']
+            print(f'{m[1]["rating"]:.1f} :: {m[1]["title"]}')
+            sim = 0
+            if m[1]['link'] != 0:
+                print('fetching image...')
+                p = get_poster_url(m[1]['link'])
+                p_vec = get_vector(p)
+                sim = get_similarity(cluster_center, p_vec)
+            unrated_top[float(sim)] = {'title':title, 'rating':rating}
+            
+            n+=1
+
+        if n > 20:
+            break
+    
+    sim_keys = sorted(unrated_top.keys(), reverse=True)
+    for k in sim_keys:
+        print(f'{k:.3f} :: {unrated_top[k]["rating"]:.1f} :: {unrated_top[k]["title"]}')
+    
+    return
+    for p in unrated_posters:
+        p_vec = get_vector(p)
+        sim = get_similarity(cluster_center, p_vec)
+        print(f'{float(sim):.3f} :: {p}')
+    
+    return
+
+    # get available images
+    image_list = get_image_listing()
 
     print()
     print('*'*30)
     print(f'Top 3 rated movies for user {user_id}')
     for i in range(3):
-        m = rated[i]
+        print(m)
+        m = sorted_orig_ratings[i]
+        m_id = m[1]['movie']['movie_id']
         m_rating = m[1]['rating']
         m_title = m[1]['movie']['title']
         m_genre = m[1]['movie']['genres_orig']
         m_link = m[1]['movie']['link']
-        print(f"{i+1}) {m_rating*5.0:.1f} :: {m_title}, link: tt{m_link:07d}.jpg")
+        m_image = f'tt{m_link:07d}.jpg'
+        print(f"{i+1}) {m_id} :: {m_rating*5.0:.1f} :: {m_title}, link: {m_image}")
+        if m_image in image_list:
+            print('Image found')
+
     print('*'*30)
     print()
     
@@ -224,13 +300,29 @@ def rate_unrated_movies(user_id):
     print('*'*30)
     print(f'Top 10 movies for user {user_id}')
     for i in range(10):
-        m = sorted_ratings[i]
+        m = sorted_new_ratings[i]
+        print(m)
+        m_id = m[1]['movie']['movie_id']
         m_rating = m[1]['rating']
         m_title = m[1]['movie']['title']
         m_genre = m[1]['movie']['genres_orig']
         m_link = m[1]['movie']['link']
-        print(f"{i+1}) {m_rating:.1f} :: {m_title}, link: tt{m_link:07d}.jpg")
+        m_image = f'tt{m_link:07d}.jpg'
+        print(f"{i+1}) {m_id} :: {m_rating:.1f} :: {m_title}, link: {m_image}")
+        if m_image in image_list:
+            print('Image found')
     print('*'*30)
+
+##########################################################################################
+"""
+TODO: 
+    1. for any given user, display the 3 most recently watched, highest rated movies
+    2. for any given user, display the 10 highest predicted movies
+    3. find the cluster center for the 3 most recently watched, highest rated movies
+    4. find the 3 most similar movies to the cluster center
+    5. display all of that nicely.
+"""
+
 
 
 
