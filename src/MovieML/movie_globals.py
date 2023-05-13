@@ -12,6 +12,7 @@ DATA_OUT_DIR = os.path.join(PROJ_PATH, 'data_out')
 CHART_DIR = os.path.join(PROJ_PATH, 'charts')
 MODEL_DIR = os.path.join(PROJ_PATH, 'models')
 MODEL_STATE = os.path.join(MODEL_DIR, 'movie_model.pth')
+IMAGE_DIR = os.path.join(PROJ_PATH, 'data', 'Multi_Label_dataset', 'images')
 
 # Dataset related constants
 AGE_DICT = {1:"Under 18",

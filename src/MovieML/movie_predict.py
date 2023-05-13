@@ -212,7 +212,11 @@ def rate_unrated_movies(user_id):
     print(f'Top 3 rated movies for user {user_id}')
     for i in range(3):
         m = rated[i]
-        print(f"{i+1}) {m[1]['rating']*5.0:.1f} :: {m[1]['movie']['title'], m[1]['movie']['genres_orig']}")
+        m_rating = m[1]['rating']
+        m_title = m[1]['movie']['title']
+        m_genre = m[1]['movie']['genres_orig']
+        m_link = m[1]['movie']['link']
+        print(f"{i+1}) {m_rating*5.0:.1f} :: {m_title}, link: tt{m_link:07d}.jpg")
     print('*'*30)
     print()
     
@@ -221,7 +225,11 @@ def rate_unrated_movies(user_id):
     print(f'Top 10 movies for user {user_id}')
     for i in range(10):
         m = sorted_ratings[i]
-        print(f"{i+1}) {m[1]['rating']:.4f} :: {m[1]['movie']['title'], m[1]['movie']['genres_orig']}")
+        m_rating = m[1]['rating']
+        m_title = m[1]['movie']['title']
+        m_genre = m[1]['movie']['genres_orig']
+        m_link = m[1]['movie']['link']
+        print(f"{i+1}) {m_rating:.1f} :: {m_title}, link: tt{m_link:07d}.jpg")
     print('*'*30)
 
 
