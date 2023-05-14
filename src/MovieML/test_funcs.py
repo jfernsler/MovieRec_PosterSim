@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-from movie_utils import make_epoch_chart
+from .movie_utils import make_epoch_chart
 
 def test_make_epoch_chart():
     count = 50

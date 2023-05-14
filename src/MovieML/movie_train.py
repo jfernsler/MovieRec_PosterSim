@@ -1,16 +1,14 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import random_split, DataLoader
+from torch.utils.data import random_split
 
 import pandas as pd
-import matplotlib.pyplot as plt
 
-from movie_dataset import MovieDataset
-from movie_model import MovieRecommender
-from movie_globals import *
-from movie_utils import make_epoch_chart
-
+from .movie_dataset import MovieDataset
+from .movie_model import MovieRecommender
+from .movie_globals import *
+from .movie_metrics import make_epoch_chart
 
 
 def main(epoch_count=30, batch_size=1000, validation_ratio=0.2, 
@@ -183,16 +181,8 @@ def main(epoch_count=30, batch_size=1000, validation_ratio=0.2,
                 f.write(report)
             # stop training
             break
-        
 
-    # Make recommendations
-    # user_id = 1  # example user ID
-    # unwatched_movies = [i for i in range(num_movies) if user_item_matrix[user_id, i] == 0]
-    # user_ids = torch.tensor([user_id] * len(unwatched_movies)).to(device)
-    # item_ids = torch.tensor(unwatched_movies).to(device)
-    # with torch.no_grad():
-    #     predicted_ratings = model(user_ids, item_ids)
-    # recommended_movies = np.argsort(-predicted_ratings)[:20]
+
 
 if __name__ == '__main__':
     main()

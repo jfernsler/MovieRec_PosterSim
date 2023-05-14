@@ -7,11 +7,11 @@ import numpy as np
 import random
 import matplotlib.pyplot as plt
 
-from movie_dataset import MovieDataset
-from movie_model import MovieRecommender
-from movie_globals import *
-from movie_utils import get_image_listing, get_poster_url
-from movie_poster_sim import *
+from .movie_dataset import MovieDataset
+from .movie_model import MovieRecommender
+from .movie_globals import *
+from .movie_utils import get_image_listing, get_poster_url, print_predictions_no_sim, print_predictions_with_sim
+from .movie_poster_sim import *
 
 def get_model(movie_data):
     # define counts for embedding layers
@@ -78,55 +78,6 @@ def predict_user_movie(model, user, movie, device):
     
     return yhat
 
-def matrix_all():
-    # evaluate the model
-    movie_data = MovieDataset()
-    num_movies = 1000
-    movie_loader = torch.utils.data.DataLoader(movie_data,
-                                                batch_size=num_movies,
-                                                shuffle=False,
-                                                num_workers=8)
-
-    device = torch.device('cpu')
-    model = get_model(movie_data)
-    model.load_state_dict(torch.load(MODEL_STATE))
-    model.eval()
-
-    y_list = list()
-    yhat_list = list()
-
-    for n,d in enumerate(movie_loader):
-        print(f'{n} ', end='', flush=True)
-        # X
-        user_ids_batch = d['user_id'].to(device)
-        genders_batch = d['gender'].to(device)
-        ages_batch = d['age'].to(device)
-        occupations_batch = d['occupation'].to(device)
-        movie_ids_batch = d['movie_id'].to(device)
-        genres_batch = d['genre'].to(device)
-        # Y
-        y =  d['rating'].to(device)
-        # Predict
-        yhat = model(user_ids_batch, genders_batch, ages_batch, occupations_batch, 
-                            movie_ids_batch, genres_batch)
-        
-        yhat = torch.clamp(yhat, 0.0, 1.0)
-
-        # back to star ratings
-        y = y * 5.0
-        yhat = torch.ceil(yhat * 5.0)
-
-        # add to list
-        y_list.extend(y.tolist())
-        yhat_list.extend(yhat.tolist())
-
-        # if n == 0:
-        #     break
-    
-    values = ['1', '2', '3', '4', '5']
-    chart_path = os.path.join(CHART_DIR, 'movie_rating_confusion_matrix_all_data.png')
-    make_matrix(y_list, yhat_list, values, 'Movie Rating Confusion Matrix - All Data', chart_path)
-
 def predict_user(user_id):
     # evaluate the model
     movie_data = MovieDataset()
@@ -157,44 +108,22 @@ def predict_user(user_id):
         print(f'Item: {p} -> Predicted: {round(yhat)} Actual: {int(y)}')
     print('*'*30)
 
-def make_matrix(y_true, y_pred, matrix_values, figure_title, figure_path):
-    # Build confusion matrix
-    print(f'Confusion Matrix: {figure_title}')
-    cf_matrix = confusion_matrix(y_true, y_pred)
-    df_cm = pd.DataFrame(cf_matrix / np.sum(cf_matrix, axis=1)[:, None],
-                            index = [matrix_values],
-                            columns = [matrix_values])
-    plt.figure(figsize = (16,12))
-    plt.subplots_adjust(bottom=0.25)
-    plt.title(figure_title)
-    hm = sn.heatmap(df_cm, annot=True, linewidths=.5, cmap='plasma', fmt='.2f', linecolor='grey')
-    hm.set(xlabel='Predicted', ylabel='Truth')
-    plt.savefig(figure_path, dpi=300, bbox_inches="tight")
-    print(f'Saved: {figure_path}')
 
-def plot_ratings():
-    movie_data = MovieDataset()
-    ratings = movie_data.ratings
-    rate_counts = ratings['rating'].value_counts(sort=True) * 5.0
-    plt.figure(figsize = (16,12))
-    plt.subplots_adjust(bottom=0.25)
-    plt.title('Rating Counts')
-    hm = sn.barplot(x=rate_counts.index, y=rate_counts.values, palette='plasma')
-    hm.set(xlabel='Rating', ylabel='Count')
-    plt.savefig(os.path.join(CHART_DIR, 'movie_ratings.png'), dpi=300, bbox_inches="tight")
-
-def rate_unrated_movies(user_id):
+def predict_movies_to_user(user_id, similarity=True, max_predict=30, max_sim=5, max_rated=3):
     movie_data = MovieDataset()
 
-    user_id = 5360
+    #user_id = 5360
 
     user_ratings = movie_data.get_user_rating_indicies(user_id)
     user_unrated = movie_data.get_user_unrated_movies(user_id)
-    print('#'*80)
+
+    print()
+    print('#'*20, 'Begin Predictions', '#'*20)
     print(f'User {user_id} has rated {len(user_ratings)} movies and has {len(user_unrated)} unrated movies')
 
     ###########################################################
     # get rated movies for user
+    # no predictions, just data
     rated = movie_data.get_user_rating_indicies(user_id)
     rated_movies = dict()
     for r in rated:
@@ -209,6 +138,7 @@ def rate_unrated_movies(user_id):
     print(f'Predicting ratings for {len(user_unrated)} movies')
 
     ###########################################################
+    # predict ratings from trained model
     device = torch.device('cpu')
     model = get_model(movie_data)
     model.load_state_dict(torch.load(MODEL_STATE))
@@ -222,98 +152,71 @@ def rate_unrated_movies(user_id):
         movie = movie_data.get_movie(m)
         rating = predict_user_movie(model, user, movie, device)
         movie['rating'] = float(rating * 5.0)
-        movie['apparent_id'] = m
         movie_ratings[m] = movie
-    # sort by rating
+    # sort by predicted ratings
     sorted_new_ratings = sorted(movie_ratings.items(), key=lambda x: x[1]['rating'], reverse=True)
     ###########################################################
 
-    rated_posters = list()
-    for r in sorted_orig_ratings[:3]:
-        print(f'{r[1]["rating"]:.1f} :: {r[1]["title"]}')
+    # if no similarity, just print the predictions
+    # printing 3x the max_sim to account for over weighted movies
+    if not similarity:
+        print_predictions_no_sim(user_id, sorted_orig_ratings, sorted_new_ratings, max_rated, max_sim*3)
+        return
+
+    print('Finding posters - be patient please...')
+
+    ###########################################################
+    # fetch posters for rated movies
+    rated_posters = list()    # keep a list just for the cluster center
+    for r in sorted_orig_ratings[:max_rated]:
+        #print(f'{r[1]["rating"]:.1f} :: {r[1]["title"]}')
         if r[1]['link'] != 0:
-            print('fetching image...')
-            rated_posters.append(get_poster_url(r[1]['link']))
-
-    print(rated_posters)
+            r[1]['poster'] = get_poster_url(r[1]['link'])
+            rated_posters.append(r[1]['poster'])
+        else:
+            r[1]['poster'] = NO_POSTER
+            rated_posters.append(NO_POSTER)
+    # generate cluster center movie poster embeddings
     cluster_center = get_cluster_center(rated_posters)
+    ###########################################################
 
-    print()
 
-    n = 0
-    unrated_posters = list()
-    unrated_top = dict()
+    ###########################################################
+    # fetch posters for predicted movies
+    predict_count = 0
+    predicted_top = dict()
     for m in sorted_new_ratings:
         rating = m[1]['rating']
         # This is an admitted bodge where some movie are getting >5.0 ratings and dominating the lists
         if rating <= 5.0:
             title = m[1]['title']
-            print(f'{m[1]["rating"]:.1f} :: {m[1]["title"]}')
+            #print(f'{m[1]["rating"]:.1f} :: {m[1]["title"]}')
             sim = 0
             if m[1]['link'] != 0:
-                print('fetching image...')
                 p = get_poster_url(m[1]['link'])
                 p_vec = get_vector(p)
                 sim = get_similarity(cluster_center, p_vec)
-            unrated_top[float(sim)] = {'title':title, 'rating':rating}
-            
-            n+=1
+            else:
+                p = NO_POSTER
+                sim = 0
+            # store dict with similarity as key
+            predicted_top[float(sim)] = {'title':title, 'rating':rating, 'poster':p}
+            predict_count+=1
 
-        if n > 20:
+        if predict_count > max_predict:
             break
-    
-    sim_keys = sorted(unrated_top.keys(), reverse=True)
-    for k in sim_keys:
-        print(f'{k:.3f} :: {unrated_top[k]["rating"]:.1f} :: {unrated_top[k]["title"]}')
+
+    predicted_similarity_sorted = sorted(predicted_top.keys(), reverse=True)
+    ###########################################################
+
+    print_predictions_with_sim(user_id, sorted_orig_ratings, predicted_similarity_sorted, predicted_top, max_rated, max_sim)
+
+    return
+    for k in predicted_similarity_sorted[:max_sim]:
+        print(f'{k:.3f} :: {predicted_top[k]["rating"]:.1f} :: {predicted_top[k]["title"]}')
     
     return
-    for p in unrated_posters:
-        p_vec = get_vector(p)
-        sim = get_similarity(cluster_center, p_vec)
-        print(f'{float(sim):.3f} :: {p}')
     
-    return
-
-    # get available images
-    image_list = get_image_listing()
-
-    print()
-    print('*'*30)
-    print(f'Top 3 rated movies for user {user_id}')
-    for i in range(3):
-        print(m)
-        m = sorted_orig_ratings[i]
-        m_id = m[1]['movie']['movie_id']
-        m_rating = m[1]['rating']
-        m_title = m[1]['movie']['title']
-        m_genre = m[1]['movie']['genres_orig']
-        m_link = m[1]['movie']['link']
-        m_image = f'tt{m_link:07d}.jpg'
-        print(f"{i+1}) {m_id} :: {m_rating*5.0:.1f} :: {m_title}, link: {m_image}")
-        if m_image in image_list:
-            print('Image found')
-
-    print('*'*30)
-    print()
-    
-    # print top 10
-    print('*'*30)
-    print(f'Top 10 movies for user {user_id}')
-    for i in range(10):
-        m = sorted_new_ratings[i]
-        print(m)
-        m_id = m[1]['movie']['movie_id']
-        m_rating = m[1]['rating']
-        m_title = m[1]['movie']['title']
-        m_genre = m[1]['movie']['genres_orig']
-        m_link = m[1]['movie']['link']
-        m_image = f'tt{m_link:07d}.jpg'
-        print(f"{i+1}) {m_id} :: {m_rating:.1f} :: {m_title}, link: {m_image}")
-        if m_image in image_list:
-            print('Image found')
-    print('*'*30)
-
-##########################################################################################
 """
 TODO: 
     1. for any given user, display the 3 most recently watched, highest rated movies
@@ -331,4 +234,4 @@ if __name__ == '__main__':
     #plot_ratings()
     # random number between 1 and 6040
     user_id = random.randint(1, 6040)
-    rate_unrated_movies(user_id)
+    predict_movies_to_user(user_id, similarity=True)

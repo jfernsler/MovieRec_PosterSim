@@ -4,8 +4,8 @@ __pycache__/
 *$py.class
 
 # big folders
-data/*
-models/*
+data/data_ignore
+data/posters/*
 
 # C extensions
 *.so

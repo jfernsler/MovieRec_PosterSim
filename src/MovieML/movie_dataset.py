@@ -1,12 +1,10 @@
 from torch.utils.data import Dataset
-import torch
-from sklearn.preprocessing import MultiLabelBinarizer
 
 import pandas as pd
 import numpy as np
 import os
 
-from movie_globals import *
+from .movie_globals import *
 
 class MovieDataset(Dataset):
     def __init__(self):

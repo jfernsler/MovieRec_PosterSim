@@ -1,7 +1,8 @@
 from MovieML import MovieDataset
+from MovieML import predict_movies_to_user
 
 import numpy as np
-import argparse, sys
+import argparse, sys, random
 
 def test_dataset():
     dataset = MovieDataset()
@@ -9,35 +10,34 @@ def test_dataset():
     for idx in rand_idx_array:
         print(dataset[idx])
 
+def predict_no_similarity():
+    user_id = random.randint(1, 6040)
+    predict_movies_to_user(user_id, similarity=False)  
+
+def predict_with_similarity():
+    user_id = random.randint(1, 6040)
+    predict_movies_to_user(user_id, similarity=True)   
 
 def main(args):
     if args.test_dataset:
         print('*'*10, ' Test Dataset ', '*'*10)
         test_dataset()
-    elif args.eval_batch:
-        print('*'*10, ' Batch Image Evaluation ', '*'*10)
-        pass
-    elif args.eval_timing:
-        print('*'*10, ' 50 Image Timing Check ', '*'*10)
-        pass
-    elif args.train:
-        print('*'*10, ' Training On Reduced Set ', '*'*10)
-        pass
+    elif args.predict:
+        print('*'*10, ' Predict From Model ', '*'*10)
+        predict_no_similarity()
+    elif args.predict_similar:
+        print('*'*10, ' Predict From Model - Evaluate Poster Similarity ', '*'*10)
+        predict_with_similarity()
 
 if __name__=='__main__':
-    test_dataset()
-    sys.exit(0)
-
     parser = argparse.ArgumentParser(description='CS614 Assignment 2 - Movie Recommender')
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('-d', '--test_dataset', 
                         action='store_true', help='Check the dataset return values')
-    group.add_argument('-es', '--eval_single', 
-                        action='store_true', help='Evaluate a single image on the weld_resnet50_model model fine tuned for this class')
-    group.add_argument('-eb', '--eval_batch', 
-                        action='store_true', help='Evaluate a batch of images on the weld_resnet50_model model fine tuned for this class')
-    group.add_argument('-t', '--train', 
-                        action='store_true', help='Will train the model on the reduced dataset for 20 epochs as v6')
+    group.add_argument('-p', '--predict', 
+                        action='store_true', help='Make a prediction for a random user based only on the trained model')
+    group.add_argument('-psim', '--predict_similar', 
+                        action='store_true', help='Make a prediction for a random user based on the trained model and poster similarity')
     
     try:
         args = parser.parse_args()

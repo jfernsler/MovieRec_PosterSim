@@ -8,7 +8,7 @@ from PIL import Image
 import matplotlib.pyplot as plt
 
 
-from movie_globals import *
+from .movie_globals import *
 import os, random
 
 def get_vec_model_and_transforms():
@@ -88,7 +88,6 @@ def get_similarity(primary_vec, compare_vec):
 
 def get_cluster_center(img_list):
     # get the cluster center for a set of images
-    model_dict = get_vec_model_and_transforms()
     img_vecs = [get_vector(image_name) for image_name in img_list]
     img_vecs = torch.stack(img_vecs)
     return torch.mean(img_vecs, dim=0)

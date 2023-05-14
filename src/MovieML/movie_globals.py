@@ -14,6 +14,7 @@ MODEL_DIR = os.path.join(PROJ_PATH, 'models')
 MODEL_STATE = os.path.join(MODEL_DIR, 'movie_model.pth')
 IMAGE_DIR = os.path.join(PROJ_PATH, 'data', 'Multi_Label_dataset', 'images')
 POSTER_DIR = os.path.join(PROJ_PATH, 'data', 'posters')
+NO_POSTER = os.path.join(PROJ_PATH, 'data', 'black_poster.jpg')
 
 # Dataset related constants
 AGE_DICT = {1:"Under 18",
