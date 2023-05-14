@@ -16,6 +16,10 @@ def get_image_listing():
 
 def get_poster_url(code):
     id = f'{code:07d}'
+    
+    if not os.path.isdir(POSTER_DIR):
+        os.makedirs(POSTER_DIR)
+
     poster_path = os.path.join(POSTER_DIR, f'{id}.jpg') 
     # Check to see if I already have it
     if not os.path.isfile(poster_path):
